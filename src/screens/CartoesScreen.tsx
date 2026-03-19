@@ -6,7 +6,7 @@ import { Cartao } from '../models/types';
 import { formatarMoeda, calcularTotalCartao } from '../services/financas';
 
 export default function CartoesScreen() {
-  const { cartoes, despesas, addCartao, updateCartao, deleteCartao } = useAppStore();
+  const { cartoes, despesas, currentMonth, addCartao, updateCartao, deleteCartao } = useAppStore();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Cartao | null>(null);
   const [nome, setNome] = useState('');
@@ -26,6 +26,7 @@ export default function CartoesScreen() {
         nome,
         limite: parseFloat(limite),
         data_vencimento: dataVencimento,
+        mes_referencia: currentMonth,
       };
       await updateCartao(atualizado);
     } else {
@@ -34,6 +35,7 @@ export default function CartoesScreen() {
         nome,
         limite: parseFloat(limite),
         data_vencimento: dataVencimento,
+        mes_referencia: currentMonth,
       };
       await addCartao(novo);
     }

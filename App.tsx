@@ -8,11 +8,12 @@ import { useAppStore } from './src/store';
 
 export default function App() {
   const [dbInitialized, setDbInitialized] = useState(false);
-  const { loadData } = useAppStore();
+  const { loadData, checkAndSetInitialMonth } = useAppStore();
 
   useEffect(() => {
     async function setup() {
       await initDatabase();
+      await checkAndSetInitialMonth();
       await loadData();
       setDbInitialized(true);
     }

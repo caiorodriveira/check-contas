@@ -1,4 +1,4 @@
-# 💰 FinanceApp — Controle Financeiro Mensal
+# 💰 Check Contas — Controle Financeiro Mensal
 
 Aplicativo mobile de controle financeiro pessoal, desenvolvido com **React Native + Expo + TypeScript**.
 
@@ -70,8 +70,8 @@ src/
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/caiorodriveira/finance-app.git
-cd finance-app
+git clone https://github.com/caiorodriveira/check-contas.git
+cd check-contas
 
 # Instalar dependências
 npm install

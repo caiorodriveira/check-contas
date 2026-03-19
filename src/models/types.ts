@@ -27,6 +27,7 @@ export interface Cartao {
   nome: string;
   limite: number;
   data_vencimento: string;
+  mes_referencia: string;
 }
 
 export interface Pagamento {

@@ -41,7 +41,7 @@ export const DespesasRepo = {
       [despesa.id, despesa.nome, despesa.valor, despesa.categoria, despesa.forma_pagamento, despesa.cartao_id ?? null, despesa.pago ? 1 : 0, despesa.data_vencimento, despesa.mes_referencia]
     );
   },
-  updatePago: async (id: string, pago: boolean) => {
+  togglePago: async (id: string, pago: boolean) => {
     const db = await getDb();
     await db.runAsync('UPDATE despesas SET pago = ? WHERE id = ?', [pago ? 1 : 0, id]);
   },
@@ -59,22 +59,25 @@ export const DespesasRepo = {
 };
 
 export const CartoesRepo = {
-  getAll: async () => {
+  getAllByMonth: async (mesReferencia: string) => {
     const db = await getDb();
-    return await db.getAllAsync<Cartao>('SELECT * FROM cartoes');
+    return await db.getAllAsync<Cartao>(
+      'SELECT * FROM cartoes WHERE mes_referencia = ?',
+      [mesReferencia]
+    );
   },
   insert: async (cartao: Cartao) => {
     const db = await getDb();
     await db.runAsync(
-      'INSERT INTO cartoes (id, nome, limite, data_vencimento) VALUES (?, ?, ?, ?)',
-      [cartao.id, cartao.nome, cartao.limite, cartao.data_vencimento]
+      'INSERT INTO cartoes (id, nome, limite, data_vencimento, mes_referencia) VALUES (?, ?, ?, ?, ?)',
+      [cartao.id, cartao.nome, cartao.limite, cartao.data_vencimento, cartao.mes_referencia]
     );
   },
   update: async (cartao: Cartao) => {
     const db = await getDb();
     await db.runAsync(
-      'UPDATE cartoes SET nome = ?, limite = ?, data_vencimento = ? WHERE id = ?',
-      [cartao.nome, cartao.limite, cartao.data_vencimento, cartao.id]
+      'UPDATE cartoes SET nome = ?, limite = ?, data_vencimento = ?, mes_referencia = ? WHERE id = ?',
+      [cartao.nome, cartao.limite, cartao.data_vencimento, cartao.mes_referencia, cartao.id]
     );
   },
   delete: async (id: string) => {

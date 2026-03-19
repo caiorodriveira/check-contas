@@ -39,9 +39,18 @@ export const initDatabase = async () => {
         id TEXT PRIMARY KEY NOT NULL,
         nome TEXT NOT NULL,
         limite REAL NOT NULL,
-        data_vencimento TEXT NOT NULL DEFAULT ""
+        data_vencimento TEXT NOT NULL DEFAULT "",
+        mes_referencia TEXT NOT NULL DEFAULT ""
       );
     `);
+
+    // Ensure the column exists for existing databases
+    try {
+      await db.execAsync(`ALTER TABLE cartoes ADD COLUMN data_vencimento TEXT NOT NULL DEFAULT ""`);
+    } catch (e) {}
+    try {
+      await db.execAsync(`ALTER TABLE cartoes ADD COLUMN mes_referencia TEXT NOT NULL DEFAULT ""`);
+    } catch (e) {}
 
     // Create Pagamentos table
     await db.execAsync(`
