@@ -46,7 +46,7 @@ export default function DespesasScreen() {
   };
 
   const faturas = getFaturasCartoes(despesas, cartoes);
-  const despesasDiretas = despesas.filter(d => d.forma_pagamento !== 'cartao' || !d.cartao_id);
+  const despesasDiretas = despesas;
   const [faturaExpandida, setFaturaExpandida] = useState<string | null>(null);
 
   const toggleFatura = (cartaoId: string) => {
