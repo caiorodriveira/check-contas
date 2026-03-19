@@ -5,7 +5,7 @@ export const dbName = 'finance.db';
 export const initDatabase = async () => {
   try {
     const db = await SQLite.openDatabaseAsync(dbName);
-    
+
     // Create Receitas table
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS receitas (
@@ -38,7 +38,8 @@ export const initDatabase = async () => {
       CREATE TABLE IF NOT EXISTS cartoes (
         id TEXT PRIMARY KEY NOT NULL,
         nome TEXT NOT NULL,
-        limite REAL NOT NULL
+        limite REAL NOT NULL,
+        data_vencimento TEXT NOT NULL DEFAULT ""
       );
     `);
 

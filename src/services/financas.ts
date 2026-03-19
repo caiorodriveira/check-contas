@@ -147,6 +147,7 @@ export function agruparPendentes(despesas: Despesa[], cartoes: Cartao[]): Penden
       nome: `Fatura ${nomeCartao}`,
       valor: total,
       despesas: deps,
+      data_vencimento: cartao?.data_vencimento,
     });
   }
 

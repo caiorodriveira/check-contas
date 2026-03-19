@@ -48,11 +48,11 @@ export default function DashboardScreen() {
       `Deseja copiar todas as receitas e despesas de ${getNomeMes(currentMonth)} para o próximo mês?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Replicar', 
+        {
+          text: 'Replicar',
           onPress: async () => {
             await replicateMonth();
-          } 
+          }
         }
       ]
     );
@@ -147,6 +147,7 @@ export default function DashboardScreen() {
                 {item.tipo === 'fatura' && item.despesas && (
                   <Text style={styles.pendenteVence}>
                     {item.despesas.length} {item.despesas.length === 1 ? 'despesa' : 'despesas'} vinculadas
+                    {"\n"}Vence: {item.data_vencimento}
                   </Text>
                 )}
               </View>

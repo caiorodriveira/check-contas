@@ -114,14 +114,16 @@ export const useAppStore = create<AppState>((set, get) => ({
       ...d,
       id: generateId(),
       mes_referencia: nextMonth,
-      pago: false
+      pago: false,
+      data_vencimento: d.data_vencimento.slice(0, -2) + nextMonth,
     }));
 
     // Replicate Receitas
     const novasReceitas = receitas.map(r => ({
       ...r,
       id: generateId(),
-      mes_referencia: nextMonth
+      mes_referencia: nextMonth,
+      data_recebimento: r.data_recebimento.slice(0, -2) + nextMonth,
     }));
 
     // Save to DB

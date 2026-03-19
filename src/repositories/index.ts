@@ -66,15 +66,15 @@ export const CartoesRepo = {
   insert: async (cartao: Cartao) => {
     const db = await getDb();
     await db.runAsync(
-      'INSERT INTO cartoes (id, nome, limite) VALUES (?, ?, ?)',
-      [cartao.id, cartao.nome, cartao.limite]
+      'INSERT INTO cartoes (id, nome, limite, data_vencimento) VALUES (?, ?, ?, ?)',
+      [cartao.id, cartao.nome, cartao.limite, cartao.data_vencimento]
     );
   },
   update: async (cartao: Cartao) => {
     const db = await getDb();
     await db.runAsync(
-      'UPDATE cartoes SET nome = ?, limite = ? WHERE id = ?',
-      [cartao.nome, cartao.limite, cartao.id]
+      'UPDATE cartoes SET nome = ?, limite = ?, data_vencimento = ? WHERE id = ?',
+      [cartao.nome, cartao.limite, cartao.data_vencimento, cartao.id]
     );
   },
   delete: async (id: string) => {

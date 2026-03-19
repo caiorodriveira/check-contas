@@ -11,9 +11,10 @@ export default function CartoesScreen() {
   const [editingItem, setEditingItem] = useState<Cartao | null>(null);
   const [nome, setNome] = useState('');
   const [limite, setLimite] = useState('');
+  const [dataVencimento, setDataVencimento] = useState('');
 
   const resetForm = () => {
-    setNome(''); setLimite(''); setEditingItem(null); setShowForm(false);
+    setNome(''); setLimite(''); setDataVencimento(''); setEditingItem(null); setShowForm(false);
   };
 
   const handleAdd = async () => {
@@ -24,6 +25,7 @@ export default function CartoesScreen() {
         ...editingItem,
         nome,
         limite: parseFloat(limite),
+        data_vencimento: dataVencimento,
       };
       await updateCartao(atualizado);
     } else {
@@ -31,6 +33,7 @@ export default function CartoesScreen() {
         id: generateId(),
         nome,
         limite: parseFloat(limite),
+        data_vencimento: dataVencimento,
       };
       await addCartao(novo);
     }
@@ -41,6 +44,7 @@ export default function CartoesScreen() {
     setEditingItem(item);
     setNome(item.nome);
     setLimite(item.limite.toString());
+    setDataVencimento(item.data_vencimento);
     setShowForm(true);
   };
 
@@ -97,6 +101,10 @@ export default function CartoesScreen() {
               {formatarMoeda(item.limite - totalGasto)}
             </Text>
           </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Vencimento</Text>
+            <Text style={styles.infoValue}>{item.data_vencimento || 'N/A'}</Text>
+          </View>
         </View>
         {/* Usage bar */}
         <View style={styles.usageBarBg}>
@@ -129,6 +137,7 @@ export default function CartoesScreen() {
             <Text style={styles.modalTitle}>{editingItem ? 'Editar Cartão' : 'Novo Cartão'}</Text>
             <TextInput style={styles.input} placeholder="Nome do cartão (ex: Nubank)" value={nome} onChangeText={setNome} />
             <TextInput style={styles.input} placeholder="Limite" keyboardType="numeric" value={limite} onChangeText={setLimite} />
+            <TextInput style={styles.input} placeholder="Vencimento (ex: Dia 10)" value={dataVencimento} onChangeText={setDataVencimento} />
             <View style={styles.formActions}>
               <TouchableOpacity style={styles.saveBtnModal} onPress={handleAdd}>
                 <Text style={styles.saveBtnText}>Salvar</Text>
