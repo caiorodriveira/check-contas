@@ -1,17 +1,10 @@
 import React, { useRef, useState } from 'react';
-import {
-  Alert,
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from 'expo/node_modules/@expo/vector-icons';
 import SummaryCard from '../components/SummaryCard';
 import ProgressBar from '../components/ProgressBar';
+import ReplicationSuccessModal from '../components/ReplicationSuccessModal';
 import { useAppStore } from '../store';
 import {
   agruparPendentes,
@@ -33,6 +26,11 @@ export default function DashboardScreen() {
   const navigation = useNavigation<any>();
 
   const [showingSuccess, setShowingSuccess] = useState(false);
+  const [successMeta, setSuccessMeta] = useState({
+    processedItems: 0,
+    completedAt: '',
+    replicatedMonthName: '',
+  });
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.94)).current;
 
@@ -56,18 +54,34 @@ export default function DashboardScreen() {
     setCurrentMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
-  const triggerSuccessAnimation = () => {
+  const triggerSuccessAnimation = (processedItems: number, replicatedMonthName: string) => {
+    const completedAt = new Intl.DateTimeFormat('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date());
+
+    setSuccessMeta({
+      processedItems,
+      completedAt: `Hoje, ${completedAt}`,
+      replicatedMonthName,
+    });
     setShowingSuccess(true);
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.94);
+
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const closeSuccessModal = () => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 0.96, duration: 180, useNativeDriver: true }),
     ]).start(() => {
-      setTimeout(() => {
-        Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
-          setShowingSuccess(false);
-          scaleAnim.setValue(0.94);
-        });
-      }, 1200);
+      setShowingSuccess(false);
+      scaleAnim.setValue(0.94);
     });
   };
 
@@ -80,8 +94,13 @@ export default function DashboardScreen() {
         {
           text: 'Replicar',
           onPress: async () => {
+            const processedItems = receitas.length + despesas.length + cartoes.length;
+            const [year, month] = currentMonth.split('-').map(Number);
+            const nextDate = new Date(year, month, 1);
+            const nextMonth = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+
             await replicateMonth();
-            triggerSuccessAnimation();
+            triggerSuccessAnimation(processedItems, getNomeMes(nextMonth));
           },
         },
       ]
@@ -177,7 +196,10 @@ export default function DashboardScreen() {
             </View>
             <Text style={styles.quickButtonTitle}>Minhas receitas</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickButton, styles.quickButtonWide]} onPress={() => navigation.navigate('Cartoes')}>
+          <TouchableOpacity
+            style={[styles.quickButton, styles.quickButtonWide]}
+            onPress={() => navigation.navigate('Cartoes')}
+          >
             <View style={styles.quickIconCircle}>
               <MaterialCommunityIcons name="credit-card-check-outline" size={18} color={colors.text} />
             </View>
@@ -210,7 +232,12 @@ export default function DashboardScreen() {
                     <View
                       style={[
                         styles.statusPill,
-                        { backgroundColor: item.tipo === 'fatura' ? 'rgba(255, 180, 171, 0.12)' : 'rgba(255, 225, 109, 0.12)' },
+                        {
+                          backgroundColor:
+                            item.tipo === 'fatura'
+                              ? 'rgba(255, 180, 171, 0.12)'
+                              : 'rgba(255, 225, 109, 0.12)',
+                        },
                       ]}
                     >
                       <Text
@@ -249,14 +276,15 @@ export default function DashboardScreen() {
         <View style={styles.bottomSpace} />
       </ScrollView>
 
-      {showingSuccess && (
-        <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
-          <Animated.View style={[styles.successBox, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.successTitle}>Mês replicado</Text>
-            <Text style={styles.successText}>Os dados foram copiados para o próximo ciclo.</Text>
-          </Animated.View>
-        </Animated.View>
-      )}
+      <ReplicationSuccessModal
+        visible={showingSuccess}
+        fadeAnim={fadeAnim}
+        scaleAnim={scaleAnim}
+        replicatedMonthName={successMeta.replicatedMonthName}
+        processedItems={successMeta.processedItems}
+        completedAt={successMeta.completedAt}
+        onClose={closeSuccessModal}
+      />
     </AppShell>
   );
 }
@@ -515,32 +543,5 @@ const styles = StyleSheet.create({
   },
   bottomSpace: {
     height: 24,
-  },
-  successOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  successBox: {
-    width: '100%',
-    maxWidth: 300,
-    backgroundColor: colors.surfaceSoft,
-    borderRadius: 26,
-    padding: 24,
-  },
-  successTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  successText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'center',
   },
 });
