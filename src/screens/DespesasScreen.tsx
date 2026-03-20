@@ -1,19 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Switch, Modal, ScrollView, Alert } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useAppStore } from '../store';
 import { generateId } from '../utils/uuid';
-import { Despesa, CategoriaDespesa, FormaPagamento } from '../models/types';
-import { formatarMoeda, getFaturasCartoes, FaturaCartao } from '../services/financas';
+import { CategoriaDespesa, Despesa, FormaPagamento } from '../models/types';
+import { FaturaCartao, formatarMoeda, getFaturasCartoes } from '../services/financas';
+import { colors, shadow } from '../theme/colors';
+import AppShell from '../components/AppShell';
 
 const CATEGORIAS: { label: string; value: CategoriaDespesa }[] = [
   { label: 'Fixo', value: 'fixo' },
   { label: 'Assinatura', value: 'assinatura' },
-  { label: 'Cartão de Crédito', value: 'cartao_credito' },
+  { label: 'Cartao', value: 'cartao_credito' },
   { label: 'Outro', value: 'outro' },
 ];
 
 export default function DespesasScreen() {
-  const { despesas, cartoes, currentMonth, addDespesa, updateDespesa, deleteDespesa, toggleDespesaPago } = useAppStore();
+  const { despesas, cartoes, currentMonth, addDespesa, updateDespesa, deleteDespesa, toggleDespesaPago } =
+    useAppStore();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Despesa | null>(null);
   const [nome, setNome] = useState('');
@@ -22,16 +35,22 @@ export default function DespesasScreen() {
   const [categoria, setCategoria] = useState<CategoriaDespesa>('outro');
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('pagamento_direto');
   const [cartaoId, setCartaoId] = useState<string | undefined>(undefined);
+  const [faturaExpandida, setFaturaExpandida] = useState<string | null>(null);
 
   const resetForm = () => {
-    setNome(''); setValor(''); setDataVencimento('');
-    setCategoria('outro'); setFormaPagamento('pagamento_direto');
-    setCartaoId(undefined); setEditingItem(null); setShowForm(false);
+    setNome('');
+    setValor('');
+    setDataVencimento('');
+    setCategoria('outro');
+    setFormaPagamento('pagamento_direto');
+    setCartaoId(undefined);
+    setEditingItem(null);
+    setShowForm(false);
   };
 
   const handleAdd = async () => {
     if (!nome || !valor || !dataVencimento) return;
-    
+
     const dados: Partial<Despesa> = {
       nome,
       valor: parseFloat(valor),
@@ -44,17 +63,17 @@ export default function DespesasScreen() {
     if (editingItem) {
       await updateDespesa({
         ...editingItem,
-        ...dados as Despesa,
+        ...(dados as Despesa),
       });
     } else {
-      const nova: Despesa = {
-        ...dados as Despesa,
+      await addDespesa({
+        ...(dados as Despesa),
         id: generateId(),
         pago: false,
         mes_referencia: currentMonth,
-      };
-      await addDespesa(nova);
+      });
     }
+
     resetForm();
   };
 
@@ -70,7 +89,7 @@ export default function DespesasScreen() {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('Confirmar', 'Deseja remover esta despesa?', [
+    Alert.alert('Excluir despesa', 'Deseja remover esta despesa?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Remover',
@@ -83,48 +102,47 @@ export default function DespesasScreen() {
   };
 
   const faturas = getFaturasCartoes(despesas, cartoes);
-  const despesasDiretas = despesas;
-  const [faturaExpandida, setFaturaExpandida] = useState<string | null>(null);
+  const totalDespesas = despesas.reduce((acc, item) => acc + item.valor, 0);
+  const pendentes = despesas.filter(item => !item.pago).length;
 
-  const toggleFatura = (cartaoId: string) => {
-    setFaturaExpandida((prev: string | null) => prev === cartaoId ? null : cartaoId);
+  const toggleFatura = (id: string) => {
+    setFaturaExpandida(prev => (prev === id ? null : id));
   };
 
   const renderFaturaCard = (fatura: FaturaCartao) => {
     const isExpanded = faturaExpandida === fatura.cartao.id;
-    const pagas = fatura.despesas.filter(d => d.pago).length;
-    const total = fatura.despesas.length;
+    const pagas = fatura.despesas.filter(item => item.pago).length;
 
     return (
       <TouchableOpacity
         key={fatura.cartao.id}
-        style={styles.faturaCard}
+        style={styles.invoiceCard}
         onPress={() => toggleFatura(fatura.cartao.id)}
-        activeOpacity={0.7}
+        activeOpacity={0.85}
       >
-        <View style={styles.faturaHeader}>
+        <View style={styles.invoiceHeader}>
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 20, marginRight: 8 }}>💳</Text>
-              <Text style={styles.faturaNome}>Fatura {fatura.cartao.nome}</Text>
-            </View>
-            <Text style={styles.faturaInfo}>
-              {total} {total === 1 ? 'despesa' : 'despesas'} · {pagas} {pagas === 1 ? 'paga' : 'pagas'}
+            <Text style={styles.invoiceTitle}>Fatura {fatura.cartao.nome}</Text>
+            <Text style={styles.invoiceSubtitle}>
+              {fatura.despesas.length} lancamentos, {pagas} pagos
             </Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.faturaTotal}>{formatarMoeda(fatura.total)}</Text>
-            <Text style={styles.faturaExpandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+          <View style={styles.invoiceRight}>
+            <Text style={styles.invoiceValue}>{formatarMoeda(fatura.total)}</Text>
+            <Text style={styles.invoiceHint}>{isExpanded ? 'Ocultar' : 'Ver itens'}</Text>
           </View>
         </View>
 
         {isExpanded && (
-          <View style={styles.faturaDetalhe}>
-            {fatura.despesas.map(d => (
-              <View key={d.id} style={styles.faturaItem}>
-                <Text style={styles.faturaItemNome}>{d.nome}</Text>
-                <Text style={[styles.faturaItemValor, d.pago && { color: '#22c55e' }]}>
-                  {formatarMoeda(d.valor)}
+          <View style={styles.invoiceDetails}>
+            {fatura.despesas.map(item => (
+              <View key={item.id} style={styles.invoiceItem}>
+                <View>
+                  <Text style={styles.invoiceItemTitle}>{item.nome}</Text>
+                  <Text style={styles.invoiceItemMeta}>Vence {item.data_vencimento}</Text>
+                </View>
+                <Text style={[styles.invoiceItemValue, item.pago && styles.invoiceItemValuePaid]}>
+                  {formatarMoeda(item.valor)}
                 </Text>
               </View>
             ))}
@@ -134,125 +152,159 @@ export default function DespesasScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: Despesa }) => {
-    return (
-      <View style={[styles.card, item.pago && styles.cardPago]}>
+  const renderItem = ({ item }: { item: Despesa }) => (
+    <View style={[styles.card, item.pago && styles.cardPaid]}>
+      <View style={styles.cardTop}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardNome}>{item.nome}</Text>
-          <Text style={styles.cardValor}>{formatarMoeda(item.valor)}</Text>
-          <View style={styles.tagsRow}>
-            <Text style={styles.tag}>{item.categoria}</Text>
-          </View>
-          <Text style={styles.cardDate}>Vence: {item.data_vencimento}</Text>
-        </View>
-        <View style={styles.statusCol}>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtnRow}>
-              <Text style={styles.actionTextRow}>✏️</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.actionBtnRow}>
-              <Text style={styles.actionTextRow}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.statusText, { color: item.pago ? '#22c55e' : '#ef4444' }]}>
-            {item.pago ? '✓ Pago' : '✗ Pendente'}
+          <Text style={styles.cardTitle}>{item.nome}</Text>
+          <Text style={[styles.cardValue, { color: item.pago ? colors.income : colors.expense }]}>
+            {formatarMoeda(item.valor)}
           </Text>
-          <Switch
-            value={item.pago}
-            onValueChange={(val: boolean) => toggleDespesaPago(item.id, val)}
-            trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-            thumbColor={item.pago ? '#22c55e' : '#94a3b8'}
-          />
+        </View>
+        <Switch
+          value={item.pago}
+          onValueChange={value => toggleDespesaPago(item.id, value)}
+          trackColor={{ false: colors.borderStrong, true: colors.income }}
+          thumbColor={item.pago ? '#f6fffb' : colors.text}
+        />
+      </View>
+
+      <View style={styles.tagsRow}>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{item.categoria}</Text>
+        </View>
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{item.forma_pagamento === 'cartao' ? 'cartao' : 'direto'}</Text>
         </View>
       </View>
-    );
-  };
+
+      <View style={styles.cardFooter}>
+        <Text style={styles.cardMeta}>Vencimento {item.data_vencimento}</Text>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.smallButton} onPress={() => handleEdit(item)}>
+            <Text style={styles.smallButtonText}>Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.smallButton, styles.smallButtonDanger]} onPress={() => handleDelete(item.id)}>
+            <Text style={[styles.smallButtonText, styles.smallButtonDangerText]}>Excluir</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 
   const ListHeader = () => (
     <>
-      {/* Fatura cards - non-editable */}
+      <View style={styles.heroCard}>
+        <Text style={styles.heroOverline}>Despesas</Text>
+        <Text style={styles.heroValue}>{formatarMoeda(totalDespesas)}</Text>
+        <Text style={styles.heroHint}>{pendentes} pendentes neste ciclo</Text>
+      </View>
+
+      <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+        <Text style={styles.addButtonText}>Adicionar despesa</Text>
+      </TouchableOpacity>
+
       {faturas.length > 0 && (
-        <View style={styles.faturasSection}>
-          <Text style={styles.faturasTitle}>Faturas de Cartão</Text>
+        <View style={styles.sectionBlock}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Faturas</Text>
+            <Text style={styles.sectionMeta}>{faturas.length} cartoes</Text>
+          </View>
           {faturas.map(renderFaturaCard)}
         </View>
       )}
 
-      {/* Section title for direct expenses */}
-      {despesasDiretas.length > 0 && faturas.length > 0 && (
-        <Text style={styles.despesasDiretasTitle}>Despesas Diretas</Text>
+      {despesas.length > 0 && (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Lancamentos</Text>
+          <Text style={styles.sectionMeta}>{despesas.length} itens</Text>
+        </View>
       )}
     </>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Add Button */}
-      <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(true)}>
-        <Text style={styles.addBtnText}>+ Nova Despesa</Text>
-      </TouchableOpacity>
-
-      {/* Form Modal */}
+    <AppShell title="Despesas">
+      <View style={styles.container}>
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editingItem ? 'Editar Despesa' : 'Nova Despesa'}</Text>
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.modalTitle}>{editingItem ? 'Editar despesa' : 'Nova despesa'}</Text>
 
-            <TextInput style={styles.input} placeholder="Nome da despesa" value={nome} onChangeText={setNome} />
-            <TextInput style={styles.input} placeholder="Valor" keyboardType="numeric" value={valor} onChangeText={setValor} />
-            <TextInput style={styles.input} placeholder="Vencimento (DD/MM)" value={dataVencimento} onChangeText={setDataVencimento} />
+            <Text style={styles.inputLabel}>Nome</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: aluguel, agua, mercado"
+              placeholderTextColor={colors.textSoft}
+              value={nome}
+              onChangeText={setNome}
+            />
 
-            {/* Categoria */}
-            <Text style={styles.formLabel}>Categoria</Text>
-            <View style={styles.optionsRow}>
-              {CATEGORIAS.map(cat => (
+            <Text style={styles.inputLabel}>Valor</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0,00"
+              placeholderTextColor={colors.textSoft}
+              keyboardType="numeric"
+              value={valor}
+              onChangeText={setValor}
+            />
+
+            <Text style={styles.inputLabel}>Vencimento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="DD/MM"
+              placeholderTextColor={colors.textSoft}
+              value={dataVencimento}
+              onChangeText={setDataVencimento}
+            />
+
+            <Text style={styles.inputLabel}>Categoria</Text>
+            <View style={styles.chipsRow}>
+              {CATEGORIAS.map(item => (
                 <TouchableOpacity
-                  key={cat.value}
-                  style={[styles.optionChip, categoria === cat.value && styles.optionChipActive]}
-                  onPress={() => setCategoria(cat.value)}
+                  key={item.value}
+                  style={[styles.chip, categoria === item.value && styles.chipActive]}
+                  onPress={() => setCategoria(item.value)}
                 >
-                  <Text style={[styles.optionText, categoria === cat.value && styles.optionTextActive]}>
-                    {cat.label}
-                  </Text>
+                  <Text style={[styles.chipText, categoria === item.value && styles.chipTextActive]}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Forma de pagamento */}
-            <Text style={styles.formLabel}>Forma de Pagamento</Text>
-            <View style={styles.optionsRow}>
+            <Text style={styles.inputLabel}>Forma de pagamento</Text>
+            <View style={styles.chipsRow}>
               <TouchableOpacity
-                style={[styles.optionChip, formaPagamento === 'pagamento_direto' && styles.optionChipActive]}
-                onPress={() => { setFormaPagamento('pagamento_direto'); setCartaoId(undefined); }}
+                style={[styles.chip, formaPagamento === 'pagamento_direto' && styles.chipActive]}
+                onPress={() => {
+                  setFormaPagamento('pagamento_direto');
+                  setCartaoId(undefined);
+                }}
               >
-                <Text style={[styles.optionText, formaPagamento === 'pagamento_direto' && styles.optionTextActive]}>
+                <Text style={[styles.chipText, formaPagamento === 'pagamento_direto' && styles.chipTextActive]}>
                   Direto
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.optionChip, formaPagamento === 'cartao' && styles.optionChipActive]}
+                style={[styles.chip, formaPagamento === 'cartao' && styles.chipActive]}
                 onPress={() => setFormaPagamento('cartao')}
               >
-                <Text style={[styles.optionText, formaPagamento === 'cartao' && styles.optionTextActive]}>
-                  Cartão
-                </Text>
+                <Text style={[styles.chipText, formaPagamento === 'cartao' && styles.chipTextActive]}>Cartao</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Cartão selection */}
             {formaPagamento === 'cartao' && cartoes.length > 0 && (
               <>
-                <Text style={styles.formLabel}>Selecionar Cartão</Text>
-                <View style={styles.optionsRow}>
-                  {cartoes.map(c => (
+                <Text style={styles.inputLabel}>Selecionar cartao</Text>
+                <View style={styles.chipsRow}>
+                  {cartoes.map(item => (
                     <TouchableOpacity
-                      key={c.id}
-                      style={[styles.optionChip, cartaoId === c.id && styles.optionChipActive]}
-                      onPress={() => setCartaoId(c.id)}
+                      key={item.id}
+                      style={[styles.chip, cartaoId === item.id && styles.chipActive]}
+                      onPress={() => setCartaoId(item.id)}
                     >
-                      <Text style={[styles.optionText, cartaoId === c.id && styles.optionTextActive]}>
-                        {c.nome}
-                      </Text>
+                      <Text style={[styles.chipText, cartaoId === item.id && styles.chipTextActive]}>{item.nome}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -260,117 +312,345 @@ export default function DespesasScreen() {
             )}
 
             <View style={styles.formActions}>
-              <TouchableOpacity style={styles.saveBtnModal} onPress={handleAdd}>
-                <Text style={styles.saveBtnText}>Salvar</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
+                <Text style={styles.primaryButtonText}>Salvar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
-                <Text style={styles.cancelBtnText}>Cancelar</Text>
+              <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
+                <Text style={styles.secondaryButtonText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* List - only direct expenses (card expenses shown in fatura cards above) */}
       <FlatList
-        data={despesasDiretas}
+        data={despesas}
         keyExtractor={item => item.id}
         renderItem={renderItem}
         ListHeaderComponent={ListHeader}
-        ListEmptyComponent={
-          faturas.length === 0
-            ? <Text style={styles.emptyText}>Nenhuma despesa cadastrada para este mês.</Text>
-            : null
-        }
-        contentContainerStyle={{ paddingBottom: 24 }}
+        ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa cadastrada neste mes.</Text>}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
-    </View>
+      </View>
+    </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f1f5f9' },
-  addBtn: {
-    backgroundColor: '#3b82f6', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginBottom: 16, elevation: 2,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 18,
   },
-  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  listContent: {
+    paddingTop: 18,
+    paddingBottom: 28,
+  },
+  heroCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 14,
+    ...shadow,
+  },
+  heroOverline: {
+    color: colors.expense,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  heroValue: {
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  heroHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  addButton: {
+    backgroundColor: colors.expense,
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  addButtonText: {
+    color: '#320e18',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  sectionBlock: {
+    marginBottom: 18,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  sectionMeta: {
+    color: colors.textSoft,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  invoiceCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 10,
+  },
+  invoiceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  invoiceTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  invoiceSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  invoiceRight: {
+    alignItems: 'flex-end',
+  },
+  invoiceValue: {
+    color: colors.accent,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  invoiceHint: {
+    color: colors.textSoft,
+    fontSize: 11,
+  },
+  invoiceDetails: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 10,
+  },
+  invoiceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  invoiceItemTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  invoiceItemMeta: {
+    color: colors.textSoft,
+    fontSize: 11,
+  },
+  invoiceItemValue: {
+    color: colors.expense,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  invoiceItemValuePaid: {
+    color: colors.income,
+  },
   card: {
-    backgroundColor: '#fff', padding: 14, borderRadius: 12, marginBottom: 10,
-    flexDirection: 'row', alignItems: 'center', elevation: 1,
-    borderLeftWidth: 4, borderLeftColor: '#ef4444',
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 12,
   },
-  cardPago: { borderLeftColor: '#22c55e', opacity: 0.75 },
-  cardNome: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
-  cardValor: { fontSize: 14, color: '#ef4444', marginVertical: 2, fontWeight: '500' },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
+  cardPaid: {
+    borderColor: '#2b6f5a',
+    backgroundColor: colors.surfaceElevated,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  cardValue: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
   tag: {
-    fontSize: 10, backgroundColor: '#e2e8f0', color: '#475569', paddingHorizontal: 6,
-    paddingVertical: 2, borderRadius: 4, overflow: 'hidden',
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  cardDate: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
-  statusCol: { alignItems: 'center', marginLeft: 8, justifyContent: 'center' },
-  actionsRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  actionBtnRow: { padding: 4 },
-  actionTextRow: { fontSize: 16 },
-  statusText: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
-  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
-
-  // Fatura cards
-  faturasSection: { marginBottom: 16 },
-  faturasTitle: { fontSize: 16, fontWeight: 'bold', color: '#7c3aed', marginBottom: 10 },
-  despesasDiretasTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 10, marginTop: 4 },
-  faturaCard: {
-    backgroundColor: '#faf5ff', borderRadius: 14, marginBottom: 10,
-    padding: 16, elevation: 2, borderLeftWidth: 4, borderLeftColor: '#7c3aed',
+  tagText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
   },
-  faturaHeader: { flexDirection: 'row', alignItems: 'center' },
-  faturaNome: { fontSize: 16, fontWeight: 'bold', color: '#5b21b6' },
-  faturaInfo: { fontSize: 12, color: '#8b5cf6', marginTop: 2 },
-  faturaTotal: { fontSize: 18, fontWeight: 'bold', color: '#7c3aed' },
-  faturaExpandIcon: { fontSize: 10, color: '#a78bfa', marginTop: 2 },
-  faturaDetalhe: {
-    marginTop: 12, paddingTop: 10,
-    borderTopWidth: 1, borderTopColor: '#e9d5ff',
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
   },
-  faturaItem: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 6, paddingHorizontal: 4,
+  cardMeta: {
+    color: colors.textMuted,
+    fontSize: 12,
+    flex: 1,
   },
-  faturaItemNome: { fontSize: 13, color: '#1e293b' },
-  faturaItemValor: { fontSize: 13, fontWeight: '600', color: '#7c3aed' },
-
-  // Modal
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  smallButton: {
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  smallButtonDanger: {
+    backgroundColor: colors.expenseSoft,
+  },
+  smallButtonText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  smallButtonDangerText: {
+    color: '#ffc9d2',
+  },
+  emptyText: {
+    color: colors.textSoft,
+    textAlign: 'center',
+    marginTop: 48,
+    fontSize: 14,
+  },
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: colors.overlay,
   },
-  modalContent: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, maxHeight: '90%',
+  modalSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#0f172a', marginBottom: 16 },
+  sheetHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.borderStrong,
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 18,
+  },
+  inputLabel: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   input: {
-    borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 12,
-    marginBottom: 12, fontSize: 15, backgroundColor: '#f8fafc',
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: colors.text,
+    fontSize: 15,
+    marginBottom: 14,
   },
-  formLabel: { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 8, marginTop: 4 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  optionChip: {
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
-    backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
   },
-  optionChipActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  optionText: { fontSize: 13, color: '#475569' },
-  optionTextActive: { color: '#fff', fontWeight: '600' },
-  formActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  saveBtnModal: {
-    flex: 1, backgroundColor: '#3b82f6', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginRight: 8,
+  chip: {
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
-  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  cancelBtn: {
-    flex: 1, backgroundColor: '#f1f5f9', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginLeft: 8, borderWidth: 1, borderColor: '#e2e8f0',
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  cancelBtnText: { color: '#64748b', fontWeight: '600', fontSize: 15 },
+  chipText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  chipTextActive: {
+    color: '#041b2e',
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: colors.expense,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#320e18',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

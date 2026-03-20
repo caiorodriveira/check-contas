@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppStore } from '../store';
 import { generateId } from '../utils/uuid';
 import { Cartao } from '../models/types';
-import { formatarMoeda, calcularTotalCartao } from '../services/financas';
+import { calcularTotalCartao, formatarMoeda } from '../services/financas';
+import { colors, shadow } from '../theme/colors';
+import AppShell from '../components/AppShell';
 
 export default function CartoesScreen() {
   const { cartoes, despesas, currentMonth, addCartao, updateCartao, deleteCartao } = useAppStore();
@@ -14,31 +16,34 @@ export default function CartoesScreen() {
   const [dataVencimento, setDataVencimento] = useState('');
 
   const resetForm = () => {
-    setNome(''); setLimite(''); setDataVencimento(''); setEditingItem(null); setShowForm(false);
+    setNome('');
+    setLimite('');
+    setDataVencimento('');
+    setEditingItem(null);
+    setShowForm(false);
   };
 
   const handleAdd = async () => {
     if (!nome || !limite) return;
-    
+
     if (editingItem) {
-      const atualizado: Cartao = {
+      await updateCartao({
         ...editingItem,
         nome,
         limite: parseFloat(limite),
         data_vencimento: dataVencimento,
         mes_referencia: currentMonth,
-      };
-      await updateCartao(atualizado);
+      });
     } else {
-      const novo: Cartao = {
+      await addCartao({
         id: generateId(),
         nome,
         limite: parseFloat(limite),
         data_vencimento: dataVencimento,
         mes_referencia: currentMonth,
-      };
-      await addCartao(novo);
+      });
     }
+
     resetForm();
   };
 
@@ -50,13 +55,13 @@ export default function CartoesScreen() {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string, hasDespesas: boolean) => {
-    if (hasDespesas) {
-      Alert.alert('Aviso', 'Não é possível remover um cartão que possui despesas vinculadas.');
+  const handleDelete = (id: string, hasExpenses: boolean) => {
+    if (hasExpenses) {
+      Alert.alert('Cartao em uso', 'Nao e possivel excluir um cartao que possui despesas vinculadas.');
       return;
     }
 
-    Alert.alert('Confirmar', 'Deseja remover este cartão?', [
+    Alert.alert('Excluir cartao', 'Deseja remover este cartao?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Remover',
@@ -71,151 +76,337 @@ export default function CartoesScreen() {
   const renderItem = ({ item }: { item: Cartao }) => {
     const totalGasto = calcularTotalCartao(despesas, item.id);
     const percentUsed = item.limite > 0 ? (totalGasto / item.limite) * 100 : 0;
+    const available = item.limite - totalGasto;
 
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Text style={styles.cardIcon}>💳</Text>
-            <Text style={styles.cardNome}>{item.nome}</Text>
+          <View>
+            <Text style={styles.cardTitle}>{item.nome}</Text>
+            <Text style={styles.cardSubtitle}>Vencimento {item.data_vencimento || 'nao informado'}</Text>
           </View>
-          <View style={styles.cardActions}>
-            <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
-              <Text style={styles.actionText}>✏️</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.headerButton} onPress={() => handleEdit(item)}>
+              <Text style={styles.headerButtonText}>Editar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item.id, totalGasto > 0)} style={styles.actionBtn}>
-              <Text style={styles.actionText}>🗑️</Text>
+            <TouchableOpacity
+              style={[styles.headerButton, styles.headerButtonDanger]}
+              onPress={() => handleDelete(item.id, totalGasto > 0)}
+            >
+              <Text style={[styles.headerButtonText, styles.headerButtonDangerText]}>Excluir</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.cardBody}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Limite</Text>
-            <Text style={styles.infoValue}>{formatarMoeda(item.limite)}</Text>
+
+        <View style={styles.metricsRow}>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Limite</Text>
+            <Text style={styles.metricValue}>{formatarMoeda(item.limite)}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Gasto Atual</Text>
-            <Text style={[styles.infoValue, { color: '#ef4444' }]}>{formatarMoeda(totalGasto)}</Text>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Usado</Text>
+            <Text style={[styles.metricValue, { color: colors.expense }]}>{formatarMoeda(totalGasto)}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Disponível</Text>
-            <Text style={[styles.infoValue, { color: '#22c55e' }]}>
-              {formatarMoeda(item.limite - totalGasto)}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Vencimento</Text>
-            <Text style={styles.infoValue}>{item.data_vencimento || 'N/A'}</Text>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Livre</Text>
+            <Text style={[styles.metricValue, { color: colors.income }]}>{formatarMoeda(available)}</Text>
           </View>
         </View>
-        {/* Usage bar */}
-        <View style={styles.usageBarBg}>
+
+        <View style={styles.barTrack}>
           <View
             style={[
-              styles.usageBarFill,
+              styles.barFill,
               {
                 width: `${Math.min(percentUsed, 100)}%`,
-                backgroundColor: percentUsed > 80 ? '#ef4444' : '#3b82f6',
+                backgroundColor: percentUsed >= 80 ? colors.expense : colors.primary,
               },
             ]}
           />
         </View>
-        <Text style={styles.usageText}>{percentUsed.toFixed(0)}% utilizado</Text>
+        <Text style={styles.barLabel}>{percentUsed.toFixed(0)}% do limite utilizado</Text>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      {/* Add Button */}
-      <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(true)}>
-        <Text style={styles.addBtnText}>+ Novo Cartão</Text>
+    <AppShell title="Cartoes">
+      <View style={styles.container}>
+      <View style={styles.heroCard}>
+        <Text style={styles.heroOverline}>Cartoes</Text>
+        <Text style={styles.heroTitle}>{cartoes.length}</Text>
+        <Text style={styles.heroHint}>cards cadastrados no ciclo atual</Text>
+      </View>
+
+      <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
+        <Text style={styles.addButtonText}>Adicionar cartao</Text>
       </TouchableOpacity>
 
-      {/* Modal */}
       <Modal visible={showForm} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{editingItem ? 'Editar Cartão' : 'Novo Cartão'}</Text>
-            <TextInput style={styles.input} placeholder="Nome do cartão (ex: Nubank)" value={nome} onChangeText={setNome} />
-            <TextInput style={styles.input} placeholder="Limite" keyboardType="numeric" value={limite} onChangeText={setLimite} />
-            <TextInput style={styles.input} placeholder="Vencimento (ex: Dia 10)" value={dataVencimento} onChangeText={setDataVencimento} />
+          <View style={styles.modalSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.modalTitle}>{editingItem ? 'Editar cartao' : 'Novo cartao'}</Text>
+
+            <Text style={styles.inputLabel}>Nome</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: Nubank, Inter, Itau"
+              placeholderTextColor={colors.textSoft}
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            <Text style={styles.inputLabel}>Limite</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0,00"
+              placeholderTextColor={colors.textSoft}
+              keyboardType="numeric"
+              value={limite}
+              onChangeText={setLimite}
+            />
+
+            <Text style={styles.inputLabel}>Vencimento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: dia 10"
+              placeholderTextColor={colors.textSoft}
+              value={dataVencimento}
+              onChangeText={setDataVencimento}
+            />
+
             <View style={styles.formActions}>
-              <TouchableOpacity style={styles.saveBtnModal} onPress={handleAdd}>
-                <Text style={styles.saveBtnText}>Salvar</Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleAdd}>
+                <Text style={styles.primaryButtonText}>Salvar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
-                <Text style={styles.cancelBtnText}>Cancelar</Text>
+              <TouchableOpacity style={styles.secondaryButton} onPress={resetForm}>
+                <Text style={styles.secondaryButtonText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* List */}
       <FlatList
         data={cartoes}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartão cadastrado.</Text>}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartao cadastrado neste mes.</Text>}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
-    </View>
+      </View>
+    </AppShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f1f5f9' },
-  addBtn: {
-    backgroundColor: '#6366f1', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginBottom: 16, elevation: 2,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: 18,
   },
-  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  heroCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 14,
+    ...shadow,
+  },
+  heroOverline: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  heroTitle: {
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  heroHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  addButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  addButtonText: {
+    color: '#041b2e',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
   card: {
-    backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, padding: 16,
-    elevation: 2,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    marginBottom: 12,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, justifyContent: 'space-between' },
-  cardIcon: { fontSize: 24, marginRight: 8 },
-  cardNome: { fontSize: 18, fontWeight: 'bold', color: '#0f172a' },
-  cardActions: { flexDirection: 'row', gap: 8 },
-  actionBtn: { padding: 4 },
-  actionText: { fontSize: 18 },
-  cardBody: { marginBottom: 12 },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 4,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 18,
   },
-  infoLabel: { fontSize: 13, color: '#64748b' },
-  infoValue: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
-  usageBarBg: {
-    height: 8, backgroundColor: '#e2e8f0', borderRadius: 4,
-    overflow: 'hidden', marginBottom: 4,
+  cardTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 6,
   },
-  usageBarFill: { height: '100%', borderRadius: 4 },
-  usageText: { fontSize: 11, color: '#94a3b8', textAlign: 'right' },
-  emptyText: { textAlign: 'center', color: '#94a3b8', marginTop: 40, fontSize: 14 },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24,
+  cardSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#0f172a', marginBottom: 16 },
+  headerActions: {
+    gap: 8,
+  },
+  headerButton: {
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  headerButtonDanger: {
+    backgroundColor: colors.expenseSoft,
+  },
+  headerButtonText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  headerButtonDangerText: {
+    color: '#ffc9d2',
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  metric: {
+    flex: 1,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 18,
+    padding: 12,
+  },
+  metricLabel: {
+    color: colors.textSoft,
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  metricValue: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  barTrack: {
+    height: 10,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  barLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  emptyText: {
+    color: colors.textSoft,
+    textAlign: 'center',
+    marginTop: 48,
+    fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: colors.overlay,
+  },
+  modalSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sheetHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.borderStrong,
+    alignSelf: 'center',
+    marginBottom: 18,
+  },
+  modalTitle: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 18,
+  },
+  inputLabel: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   input: {
-    borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 12,
-    marginBottom: 12, fontSize: 15, backgroundColor: '#f8fafc',
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: colors.text,
+    fontSize: 15,
+    marginBottom: 14,
   },
-  formActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  saveBtnModal: {
-    flex: 1, backgroundColor: '#6366f1', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginRight: 8,
+  formActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
   },
-  saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  cancelBtn: {
-    flex: 1, backgroundColor: '#f1f5f9', paddingVertical: 14, borderRadius: 12,
-    alignItems: 'center', marginLeft: 8, borderWidth: 1, borderColor: '#e2e8f0',
+  primaryButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
   },
-  cancelBtnText: { color: '#64748b', fontWeight: '600', fontSize: 15 },
+  primaryButtonText: {
+    color: '#041b2e',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: colors.backgroundAlt,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

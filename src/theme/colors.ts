@@ -1,0 +1,32 @@
+export const colors = {
+  background: '#07111f',
+  backgroundAlt: '#0b1628',
+  surface: '#101c31',
+  surfaceElevated: '#162540',
+  surfaceSoft: '#1a2d4c',
+  border: '#223557',
+  borderStrong: '#2f4974',
+  text: '#eef4ff',
+  textMuted: '#93a8c8',
+  textSoft: '#6f86a8',
+  primary: '#5ab2ff',
+  primarySoft: '#163b66',
+  income: '#34d399',
+  incomeSoft: '#12382f',
+  expense: '#fb7185',
+  expenseSoft: '#431927',
+  warning: '#fbbf24',
+  warningSoft: '#453312',
+  accent: '#22d3ee',
+  accentSoft: '#113d46',
+  overlay: 'rgba(3, 9, 19, 0.82)',
+  white: '#ffffff',
+};
+
+export const shadow = {
+  shadowColor: '#000000',
+  shadowOffset: { width: 0, height: 12 },
+  shadowOpacity: 0.24,
+  shadowRadius: 20,
+  elevation: 10,
+};

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { colors, shadow } from '../theme/colors';
 
 interface SummaryCardProps {
   title: string;
@@ -8,7 +9,7 @@ interface SummaryCardProps {
   style?: ViewStyle;
 }
 
-export default function SummaryCard({ title, value, color = '#1e293b', style }: SummaryCardProps) {
+export default function SummaryCard({ title, value, color = colors.text, style }: SummaryCardProps) {
   return (
     <View style={[styles.card, style]}>
       <Text style={styles.title}>{title}</Text>
@@ -19,20 +20,19 @@ export default function SummaryCard({ title, value, color = '#1e293b', style }: 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    backgroundColor: colors.surface,
+    padding: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow,
   },
   title: {
     fontSize: 13,
-    color: '#64748b',
-    marginBottom: 6,
-    fontWeight: '500',
+    color: colors.textMuted,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   value: {
     fontSize: 20,
