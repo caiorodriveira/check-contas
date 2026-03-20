@@ -22,10 +22,10 @@ interface AppShellProps {
 }
 
 const MENU_ITEMS = [
-  { route: 'Dashboard', label: 'Dashboard', description: 'Visao geral do mes', icon: 'view-grid-outline' as const },
+  { route: 'Dashboard', label: 'Dashboard', description: 'Visão geral do mês', icon: 'view-grid-outline' as const },
   { route: 'Despesas', label: 'Despesas', description: 'Contas e vencimentos', icon: 'file-document-plus-outline' as const },
   { route: 'Receitas', label: 'Receitas', description: 'Entradas e recebimentos', icon: 'bank-outline' as const },
-  { route: 'Cartoes', label: 'Cartoes', description: 'Limites e faturas', icon: 'credit-card-outline' as const },
+  { route: 'Cartoes', label: 'Cartões', description: 'Limites e faturas', icon: 'credit-card-outline' as const },
 ];
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);

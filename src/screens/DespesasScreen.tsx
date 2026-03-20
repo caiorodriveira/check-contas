@@ -20,7 +20,7 @@ import AppShell from '../components/AppShell';
 const CATEGORIAS: { label: string; value: CategoriaDespesa }[] = [
   { label: 'Fixo', value: 'fixo' },
   { label: 'Assinatura', value: 'assinatura' },
-  { label: 'Cartao', value: 'cartao_credito' },
+  { label: 'Cartão', value: 'cartao_credito' },
   { label: 'Outro', value: 'outro' },
 ];
 
@@ -138,7 +138,7 @@ export default function DespesasScreen() {
               )}
             </View>
             <Text style={styles.invoiceSubtitle}>
-              {fatura.despesas.length} lancamentos, {pagas} pagos
+              {fatura.despesas.length} lançamentos, {pagas} pagos
             </Text>
           </View>
           <View style={styles.alignEnd}>
@@ -184,7 +184,7 @@ export default function DespesasScreen() {
               <Text style={styles.inputLabel}>Nome</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: aluguel, agua, mercado"
+                placeholder="Ex: aluguel, água, mercado"
                 placeholderTextColor={colors.textSoft}
                 value={nome}
                 onChangeText={setNome}
@@ -239,13 +239,13 @@ export default function DespesasScreen() {
                   style={[styles.chip, formaPagamento === 'cartao' && styles.chipActive]}
                   onPress={() => setFormaPagamento('cartao')}
                 >
-                  <Text style={[styles.chipText, formaPagamento === 'cartao' && styles.chipTextActive]}>Cartao</Text>
+                  <Text style={[styles.chipText, formaPagamento === 'cartao' && styles.chipTextActive]}>Cartão</Text>
                 </TouchableOpacity>
               </View>
 
               {formaPagamento === 'cartao' && cartoes.length > 0 && (
                 <>
-                  <Text style={styles.inputLabel}>Selecionar cartao</Text>
+                  <Text style={styles.inputLabel}>Selecionar cartão</Text>
                   <View style={styles.chipsRow}>
                     {cartoes.map(item => (
                       <TouchableOpacity
@@ -277,8 +277,8 @@ export default function DespesasScreen() {
             <View style={styles.confirmCard}>
               <Text style={styles.confirmTitle}>Quitar fatura agrupada</Text>
               <Text style={styles.confirmText}>
-                Ao confirmar, todas as despesas vinculadas ao cartao{' '}
-                <Text style={styles.confirmTextStrong}>{confirmarFatura?.cartao.nome}</Text> serao marcadas como pagas.
+                Ao confirmar, todas as despesas vinculadas ao cartão{' '}
+                <Text style={styles.confirmTextStrong}>{confirmarFatura?.cartao.nome}</Text> serão marcadas como pagas.
               </Text>
               <View style={styles.confirmActions}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => setConfirmarFatura(null)}>
@@ -321,7 +321,7 @@ export default function DespesasScreen() {
                 <>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Faturas</Text>
-                    <Text style={styles.sectionMeta}>{faturas.length} cartoes</Text>
+                    <Text style={styles.sectionMeta}>{faturas.length} cartões</Text>
                   </View>
                   {faturas.map(renderFaturaCard)}
                 </>
@@ -329,13 +329,13 @@ export default function DespesasScreen() {
 
               {despesas.length > 0 && (
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Lancamentos</Text>
+                  <Text style={styles.sectionTitle}>Lançamentos</Text>
                   <Text style={styles.sectionMeta}>{despesas.length} itens</Text>
                 </View>
               )}
             </>
           }
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa cadastrada neste mes.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma despesa cadastrada neste mês.</Text>}
           renderItem={({ item }) => (
             <View style={[styles.card, item.pago && styles.cardPaid]}>
               <View style={styles.cardTop}>
@@ -358,7 +358,7 @@ export default function DespesasScreen() {
                   <Text style={styles.tagText}>{item.categoria}</Text>
                 </View>
                 <View style={styles.tag}>
-                  <Text style={styles.tagText}>{item.forma_pagamento === 'cartao' ? 'cartao' : 'direto'}</Text>
+                  <Text style={styles.tagText}>{item.forma_pagamento === 'cartao' ? 'cartão' : 'direto'}</Text>
                 </View>
               </View>
 

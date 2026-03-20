@@ -57,11 +57,11 @@ export default function CartoesScreen() {
 
   const handleDelete = (id: string, hasExpenses: boolean) => {
     if (hasExpenses) {
-      Alert.alert('Cartao em uso', 'Nao e possivel excluir um cartao que possui despesas vinculadas.');
+      Alert.alert('Cartão em uso', 'Não é possível excluir um cartão que possui despesas vinculadas.');
       return;
     }
 
-    Alert.alert('Excluir cartao', 'Deseja remover este cartao?', [
+    Alert.alert('Excluir cartão', 'Deseja remover este cartão?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Remover',
@@ -74,28 +74,28 @@ export default function CartoesScreen() {
   };
 
   return (
-    <AppShell title="Cartoes">
+    <AppShell title="Cartões">
       <View style={styles.container}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroOverline}>Cartoes</Text>
+          <Text style={styles.heroOverline}>Cartões</Text>
           <Text style={styles.heroValue}>{cartoes.length}</Text>
           <Text style={styles.heroHint}>Cartões cadastrados no ciclo atual</Text>
         </View>
 
         <TouchableOpacity style={styles.addButton} onPress={() => setShowForm(true)}>
-          <Text style={styles.addButtonText}>Adicionar cartao</Text>
+          <Text style={styles.addButtonText}>Adicionar cartão</Text>
         </TouchableOpacity>
 
         <Modal visible={showForm} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.modalSheet}>
               <View style={styles.sheetHandle} />
-              <Text style={styles.modalTitle}>{editingItem ? 'Editar cartao' : 'Novo cartao'}</Text>
+              <Text style={styles.modalTitle}>{editingItem ? 'Editar cartão' : 'Novo cartão'}</Text>
 
               <Text style={styles.inputLabel}>Nome</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Nubank, Inter, Itau"
+                placeholder="Ex: Nubank, Inter, Itaú"
                 placeholderTextColor={colors.textSoft}
                 value={nome}
                 onChangeText={setNome}
@@ -137,7 +137,7 @@ export default function CartoesScreen() {
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartao cadastrado neste mes.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhum cartão cadastrado neste mês.</Text>}
           renderItem={({ item }) => {
             const totalGasto = calcularTotalCartao(despesas, item.id);
             const percentUsed = item.limite > 0 ? (totalGasto / item.limite) * 100 : 0;
@@ -148,7 +148,7 @@ export default function CartoesScreen() {
                 <View style={styles.cardHeader}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.cardTitle}>{item.nome}</Text>
-                    <Text style={styles.cardSubtitle}>Vencimento {item.data_vencimento || 'nao informado'}</Text>
+                    <Text style={styles.cardSubtitle}>Vencimento {item.data_vencimento || 'não informado'}</Text>
                   </View>
                   <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.headerButton} onPress={() => handleEdit(item)}>

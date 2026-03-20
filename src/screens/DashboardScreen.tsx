@@ -73,8 +73,8 @@ export default function DashboardScreen() {
 
   const handleReplicate = () => {
     Alert.alert(
-      'Replicar mes',
-      `Deseja copiar receitas e despesas de ${getNomeMes(currentMonth)} para o proximo mes?`,
+      'Replicar mês',
+      `Deseja copiar receitas e despesas de ${getNomeMes(currentMonth)} para o próximo mês?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -91,7 +91,7 @@ export default function DashboardScreen() {
   const handleClear = () => {
     Alert.alert(
       'Limpar dados',
-      `Deseja apagar todos os registros de ${getNomeMes(currentMonth)}? Essa acao nao pode ser desfeita.`,
+      `Deseja apagar todos os registros de ${getNomeMes(currentMonth)}? Essa ação não pode ser desfeita.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -99,7 +99,7 @@ export default function DashboardScreen() {
           style: 'destructive',
           onPress: async () => {
             await clearMonthData();
-            Alert.alert('Mes limpo', 'Os dados foram removidos com sucesso.');
+            Alert.alert('Mês limpo', 'Os dados foram removidos com sucesso.');
           },
         },
       ]
@@ -162,7 +162,7 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Atalhos rapidos</Text>
+          <Text style={styles.sectionTitle}>Atalhos rápidos</Text>
         </View>
         <View style={styles.quickGrid}>
           <TouchableOpacity style={styles.quickButton} onPress={() => navigation.navigate('Despesas')}>
@@ -181,14 +181,14 @@ export default function DashboardScreen() {
             <View style={styles.quickIconCircle}>
               <MaterialCommunityIcons name="credit-card-check-outline" size={18} color={colors.text} />
             </View>
-            <Text style={styles.quickButtonTitle}>Meus Cartoes</Text>
+            <Text style={styles.quickButtonTitle}>Meus Cartões</Text>
           </TouchableOpacity>
         </View>
 
         {pendentesAgrupados.length > 0 && (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Pendencias</Text>
+              <Text style={styles.sectionTitle}>Pendências</Text>
               <Text style={styles.linkText}>Ver tudo</Text>
             </View>
             <View style={styles.pendingList}>
@@ -234,15 +234,15 @@ export default function DashboardScreen() {
         </View>
         <View style={styles.card}>
           <Text style={styles.cardDescription}>
-            Gerencie a estrutura deste mes com base no historico ou inicie um novo planejamento.
+            Gerencie a estrutura deste mês com base no histórico ou inicie um novo planejamento.
           </Text>
           <TouchableOpacity style={styles.primaryCta} onPress={handleReplicate}>
             <MaterialCommunityIcons name="content-copy" size={16} color="#032d33" />
-            <Text style={styles.primaryCtaText}>Copiar para o proximo mes</Text>
+            <Text style={styles.primaryCtaText}>Copiar para o próximo mês</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryCta} onPress={handleClear}>
             <MaterialCommunityIcons name="delete-outline" size={16} color={colors.textMuted} />
-            <Text style={styles.secondaryCtaText}>Limpar este mes</Text>
+            <Text style={styles.secondaryCtaText}>Limpar este mês</Text>
           </TouchableOpacity>
         </View>
 
@@ -252,8 +252,8 @@ export default function DashboardScreen() {
       {showingSuccess && (
         <Animated.View style={[styles.successOverlay, { opacity: fadeAnim }]}>
           <Animated.View style={[styles.successBox, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.successTitle}>Mes replicado</Text>
-            <Text style={styles.successText}>Os dados foram copiados para o proximo ciclo.</Text>
+            <Text style={styles.successTitle}>Mês replicado</Text>
+            <Text style={styles.successText}>Os dados foram copiados para o próximo ciclo.</Text>
           </Animated.View>
         </Animated.View>
       )}

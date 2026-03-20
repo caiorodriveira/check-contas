@@ -89,10 +89,10 @@ export default function ReceitasScreen() {
               <View style={styles.sheetHandle} />
               <Text style={styles.modalTitle}>{editingItem ? 'Editar receita' : 'Nova receita'}</Text>
 
-              <Text style={styles.inputLabel}>Descricao</Text>
+              <Text style={styles.inputLabel}>Descrição</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: salario, freela, bonus"
+                placeholder="Ex: salário, freela, bônus"
                 placeholderTextColor={colors.textSoft}
                 value={descricao}
                 onChangeText={setDescricao}
@@ -134,7 +134,7 @@ export default function ReceitasScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma receita cadastrada neste mes.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma receita cadastrada neste mês.</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.cardMain}>
